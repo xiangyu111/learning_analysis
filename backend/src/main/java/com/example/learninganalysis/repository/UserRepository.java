@@ -3,15 +3,18 @@ package com.example.learninganalysis.repository;
 import com.example.learninganalysis.model.User;
 import com.example.learninganalysis.model.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.Optional;
-import java.util.List;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
+@Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
-    Optional<User> findByEmail(String email);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
-    
-    long countByRole(UserRole role);
+    boolean existsByEmailAndIdNot(String email, Long id);
     List<User> findByRole(UserRole role);
-} 
+    List<User> findTop10ByRoleOrderByCreatedAtDesc(UserRole role);
+    long countByRole(UserRole role);
+}

@@ -41,18 +41,35 @@ const Dashboard: React.FC = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                
+                // 检查用户登录状态
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                console.log('当前用户信息:', user);
+                
+                if (!user.id || user.role !== 'STUDENT') {
+                    throw new Error('用户未登录或权限不足');
+                }
+                
+                console.log('开始获取仪表盘数据');
+                console.log('使用Token:', localStorage.getItem('token'));
+                
                 const [goalsRes, activitiesRes, statsRes] = await Promise.all([
                     axios.get('/api/student/goals'),
                     axios.get('/api/student/activities'),
                     axios.get('/api/student/stats')
                 ]);
 
+                console.log('获取目标数据:', goalsRes.data);
+                console.log('获取活动数据:', activitiesRes.data);
+                console.log('获取统计数据:', statsRes.data);
+                
                 setGoals(goalsRes.data);
                 setActivities(activitiesRes.data);
                 setStats(statsRes.data);
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error fetching dashboard data:', error);
-                message.error('获取数据失败，请稍后重试');
+                const errorMessage = error.response?.data?.message || error.message || '获取数据失败';
+                message.error('获取数据失败: ' + errorMessage);
             } finally {
                 setLoading(false);
             }

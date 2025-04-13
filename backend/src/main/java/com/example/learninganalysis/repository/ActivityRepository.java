@@ -46,4 +46,8 @@ public interface ActivityRepository extends JpaRepository<Activity, Long> {
     
     // 按类型和开始时间倒序查询活动
     List<Activity> findByTypeOrderByStartTimeDesc(Activity.ActivityType type);
-} 
+    
+    // 使用原生SQL查询所有活动，避免可能的枚举映射错误
+    @Query(value = "SELECT * FROM activities", nativeQuery = true)
+    List<Activity> findAllActivitiesNative();
+}

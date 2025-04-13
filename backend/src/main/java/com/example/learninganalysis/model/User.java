@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 
 @Data
 @Entity
@@ -31,6 +33,10 @@ public class User {
 
     @Column(name = "avatar_url")
     private String avatarUrl;
+    
+    // 添加班级关联，学生可以加入多个班级
+    @ManyToMany(mappedBy = "students")
+    private Set<ClassEntity> joinedClasses = new HashSet<>();
 
     @OneToMany(mappedBy = "student")
     private List<LearningGoal> goals;
@@ -71,4 +77,4 @@ public class User {
     public String getFullName() {
         return this.name;
     }
-} 
+}

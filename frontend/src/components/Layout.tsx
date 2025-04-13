@@ -157,7 +157,16 @@ const Layout: React.FC = () => {
       key: 'profile',
       icon: <UserOutlined />,
       label: '个人中心',
-      onClick: () => navigate('/profile')
+      onClick: () => {
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (currentUser.role === 'STUDENT') {
+          navigate('/student/profile');
+        } else if (currentUser.role === 'TEACHER') {
+          navigate('/teacher/profile');
+        } else {
+          navigate('/profile');
+        }
+      }
     },
     {
       type: 'divider',

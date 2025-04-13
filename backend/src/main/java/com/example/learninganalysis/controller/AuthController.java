@@ -1,7 +1,9 @@
 package com.example.learninganalysis.controller;
 
+import com.example.learninganalysis.model.ClassEntity;
 import com.example.learninganalysis.model.User;
 import com.example.learninganalysis.model.UserRole;
+import com.example.learninganalysis.repository.ClassRepository;
 import com.example.learninganalysis.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -27,6 +29,9 @@ public class AuthController {
     
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private ClassRepository classRepository;
 
     @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> register(
@@ -35,6 +40,7 @@ public class AuthController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "email", required = false) String email,
             @RequestParam(value = "role", required = false) String role,
+            @RequestParam(value = "classId", required = false) Long classId,
             @RequestParam(value = "avatar", required = false) MultipartFile avatar) {
         try {
             // 添加详细的请求参数记录
@@ -44,6 +50,7 @@ public class AuthController {
             logMessage.append("name: ").append(name).append("\n");
             logMessage.append("email: ").append(email).append("\n");
             logMessage.append("role: ").append(role).append("\n");
+            logMessage.append("classId: ").append(classId).append("\n");
             logMessage.append("avatar: ").append(avatar != null ? "已上传" : "未上传").append("\n");
             logger.info(logMessage.toString());
             
@@ -78,6 +85,18 @@ public class AuthController {
                 errorResponse.put("message", "邮箱 '" + email + "' 已被注册，请使用其他邮箱地址");
                 errorResponse.put("field", "email");
                 return ResponseEntity.badRequest().body(errorResponse);
+            }
+            
+            // 检查班级是否存在
+            if (classId != null) {
+                boolean classExists = classRepository.existsById(classId);
+                if (!classExists) {
+                    logger.warning("注册失败，指定的班级不存在: " + classId);
+                    Map<String, String> errorResponse = new HashMap<>();
+                    errorResponse.put("message", "指定的班级不存在");
+                    errorResponse.put("field", "classId");
+                    return ResponseEntity.badRequest().body(errorResponse);
+                }
             }
             
             User user = new User();
@@ -123,6 +142,13 @@ public class AuthController {
             }
 
             User registeredUser = userService.registerUser(user);
+            
+            // 如果是学生，并指定了班级ID，则处理班级申请
+            if (registeredUser.getRole() == UserRole.STUDENT && classId != null) {
+                userService.processStudentClassAssignment(registeredUser.getId(), classId);
+                logger.info("学生已自动申请加入班级: " + classId);
+            }
+            
             logger.info("用户注册成功: " + registeredUser.getUsername());
             
             // 创建返回对象
@@ -198,4 +224,4 @@ public class AuthController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-} 
+}

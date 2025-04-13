@@ -33,12 +33,15 @@ const StudentActivityList: React.FC = () => {
   // 获取用户角色
   const getUserRole = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+    console.log('当前用户信息:', user);
     return user.role || '';
   };
 
   // 获取API前缀
   const getApiPrefix = () => {
     const role = getUserRole();
+    console.log('当前用户角色:', role);
+    
     if (role === 'STUDENT') {
       return '/api/student';
     } else if (role === 'TEACHER') {
@@ -68,6 +71,20 @@ const StudentActivityList: React.FC = () => {
   };
 
   useEffect(() => {
+    // 检查用户登录状态
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!user.id || !user.role) {
+      setError('用户未登录或权限不足');
+      setLoading(false);
+      return;
+    }
+    
+    if (user.role !== 'STUDENT' && user.role !== 'TEACHER') {
+      setError('没有访问权限');
+      setLoading(false);
+      return;
+    }
+    
     setError(null);
     fetchActivities();
   }, [activeTab, filterType]);
@@ -78,22 +95,33 @@ const StudentActivityList: React.FC = () => {
       let response;
       const apiPrefix = getApiPrefix();
       console.log(`请求活动列表: ${apiPrefix}, 当前Tab=${activeTab}, 过滤类型=${filterType || '无'}`);
+      
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      console.log('使用Token:', localStorage.getItem('token'));
+      
+      if (!user.id) {
+        throw new Error('用户未登录或会话已过期');
+      }
 
       if (filterType) {
+        console.log(`请求特定类型活动: ${apiPrefix}/activities/type/${filterType}`);
         response = await axios.get(`${apiPrefix}/activities/type/${filterType}`);
       } else if (activeTab === 'my') {
-        console.log('获取我的活动列表...');
+        console.log(`获取我的活动列表: ${apiPrefix}/activities/my`);
         response = await axios.get(`${apiPrefix}/activities/my`);
       } else {
+        console.log(`获取全部活动列表: ${apiPrefix}/activities`);
         response = await axios.get(`${apiPrefix}/activities`);
       }
+      
       console.log('获取活动列表成功:', response.data);
       setActivities(response.data || []);
       setError(null);
     } catch (error: any) {
       console.error('获取活动列表失败:', error);
-      setError(error.response?.data?.message || '获取活动列表失败，请重新登录后重试');
-      message.error(error.response?.data?.message || '获取活动列表失败');
+      const errorMessage = error.response?.data?.message || error.message || '获取活动列表失败，请重新登录后重试';
+      setError(errorMessage);
+      message.error(errorMessage);
       setActivities([]);
     } finally {
       setLoading(false);
@@ -295,27 +323,31 @@ const StudentActivityList: React.FC = () => {
                       </Space>
                     }
                   />
-                  {activity.status === 'UPCOMING' && !activity.participationStatus && (
-                    <Button 
-                      type="primary" 
-                      style={{ marginTop: 16 }}
-                      onClick={() => handleRegister(activity.id)}
-                      disabled={activity.currentParticipants >= activity.maxParticipants}
-                    >
-                      {activity.currentParticipants >= activity.maxParticipants 
-                        ? '报名已满' 
-                        : '立即报名'}
-                    </Button>
-                  )}
-                  {activity.participationStatus === 'REGISTERED' && (
-                    <Space style={{ marginTop: 16 }}>
-                      <Button onClick={() => handleCancel(activity.id)}>取消报名</Button>
-                      {activity.status === 'ENDED' && (
-                        <Button type="primary" onClick={() => handleComplete(activity.id)}>
-                          完成活动
+                  {activity.status === 'UPCOMING' && (
+                    <>
+                      {(!activity.participationStatus || activity.participationStatus === 'CANCELLED') && (
+                        <Button 
+                          type="primary" 
+                          style={{ marginTop: 16 }}
+                          onClick={() => handleRegister(activity.id)}
+                          disabled={activity.currentParticipants >= activity.maxParticipants}
+                        >
+                          {activity.currentParticipants >= activity.maxParticipants 
+                            ? '报名已满' 
+                            : activity.participationStatus === 'CANCELLED' ? '重新报名' : '立即报名'}
                         </Button>
                       )}
-                    </Space>
+                      {activity.participationStatus === 'REGISTERED' && (
+                        <Space style={{ marginTop: 16 }}>
+                          <Button onClick={() => handleCancel(activity.id)}>取消报名</Button>
+                        </Space>
+                      )}
+                    </>
+                  )}
+                  {activity.status === 'ENDED' && activity.participationStatus === 'REGISTERED' && (
+                    <Button type="primary" style={{ marginTop: 16 }} onClick={() => handleComplete(activity.id)}>
+                      完成活动
+                    </Button>
                   )}
                 </List.Item>
               )}
@@ -360,12 +392,22 @@ const StudentActivityList: React.FC = () => {
                   {activity.participationStatus === 'REGISTERED' && (
                     <Space style={{ marginTop: 16 }}>
                       <Button onClick={() => handleCancel(activity.id)}>取消报名</Button>
-                      {activity.status === 'ENDED' && (
-                        <Button type="primary" onClick={() => handleComplete(activity.id)}>
-                          完成活动
-                        </Button>
-                      )}
                     </Space>
+                  )}
+                  {activity.participationStatus === 'CANCELLED' && activity.status === 'UPCOMING' && (
+                    <Button 
+                      type="primary" 
+                      style={{ marginTop: 16 }}
+                      onClick={() => handleRegister(activity.id)}
+                      disabled={activity.currentParticipants >= activity.maxParticipants}
+                    >
+                      {activity.currentParticipants >= activity.maxParticipants ? '报名已满' : '重新报名'}
+                    </Button>
+                  )}
+                  {activity.participationStatus === 'REGISTERED' && activity.status === 'ENDED' && (
+                    <Button type="primary" style={{ marginTop: 16 }} onClick={() => handleComplete(activity.id)}>
+                      完成活动
+                    </Button>
                   )}
                 </List.Item>
               )}

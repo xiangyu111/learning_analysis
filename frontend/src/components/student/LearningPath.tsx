@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, List, Typography, Progress, Tag } from 'antd';
+import { Card, List, Typography, Progress, Tag, message, Empty, Spin } from 'antd';
 import { BookOutlined, CalendarOutlined } from '@ant-design/icons';
 import axios from '../../utils/axios';
 
@@ -30,14 +30,33 @@ interface LearningActivity {
 
 const LearningPath: React.FC = () => {
     const [paths, setPaths] = useState<LearningPath[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchPaths = async () => {
             try {
+                setLoading(true);
+                setError(null);
+                
+                // 获取当前用户信息
+                const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+                console.log('当前用户信息:', userInfo);
+                
+                if (!userInfo.id) {
+                    throw new Error('用户未登录或用户信息不完整');
+                }
+                
+                console.log('请求学习路径, URL: /api/student/learning-paths');
                 const response = await axios.get('/api/student/learning-paths');
+                console.log('学习路径响应:', response.data);
                 setPaths(response.data);
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Error fetching learning paths:', error);
+                setError(error.response?.data?.message || '获取学习路径失败');
+                message.error('获取学习路径失败: ' + (error.response?.data?.message || error.message));
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -56,6 +75,31 @@ const LearningPath: React.FC = () => {
                 return 'default';
         }
     };
+
+    if (loading) {
+        return <Spin tip="加载中..." size="large" style={{ display: 'flex', justifyContent: 'center', margin: '50px 0' }} />;
+    }
+
+    if (error) {
+        return (
+            <div>
+                <Title level={2}>学习路径</Title>
+                <Empty 
+                    description={`加载失败: ${error}`} 
+                    image={Empty.PRESENTED_IMAGE_SIMPLE} 
+                />
+            </div>
+        );
+    }
+
+    if (paths.length === 0) {
+        return (
+            <div>
+                <Title level={2}>学习路径</Title>
+                <Empty description="暂无学习路径" />
+            </div>
+        );
+    }
 
     return (
         <div>

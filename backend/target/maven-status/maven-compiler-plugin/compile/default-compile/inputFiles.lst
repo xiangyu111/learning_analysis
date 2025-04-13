@@ -1,5 +1,6 @@
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\ParticipationStatus.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\repository\ClassRepository.java
+C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\service\ClassService.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\repository\LearningGoalRepository.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\service\UserService.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\ActivityType.java
@@ -12,7 +13,10 @@ C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\Evaluation.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\StudentStats.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\controller\AuthController.java
+C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\controller\ClassController.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\service\TeacherService.java
+C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\ApplicationStatus.java
+C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\ClassApplication.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\repository\ActivityParticipationRepository.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\ActivityStatus.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\repository\EvaluationRepository.java
@@ -24,6 +28,7 @@ C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\Feedback.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\LearningGoal.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\controller\TeacherController.java
+C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\repository\ClassApplicationRepository.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\Activity.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\service\StudentService.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\config\CorsConfig.java
@@ -31,3 +36,4 @@ C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\ActivityParticipation.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\LearningActivity.java
 C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\model\LearningPath.java
+C:\Users\86176\Desktop\大学生课外学情记录分析系统\backend\src\main\java\com\example\learninganalysis\controller\UserController.java

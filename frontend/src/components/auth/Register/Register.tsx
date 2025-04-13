@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, message, Select, Upload, Steps, Card, Row, Col } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, UserAddOutlined, UploadOutlined, MobileOutlined, TeamOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, UserAddOutlined, UploadOutlined, MobileOutlined, TeamOutlined, BankOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../../utils/axios';
 import type { UploadFile, RcFile } from 'antd/es/upload/interface';
@@ -16,7 +16,14 @@ interface RegisterForm {
   email: string;
   mobile: string;
   role: string;
+  classId?: string;
   avatar?: File;
+}
+
+interface ClassOption {
+  id: number;
+  name: string;
+  teacherName: string;
 }
 
 const Register: React.FC = () => {
@@ -24,7 +31,35 @@ const Register: React.FC = () => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
+  const [classes, setClasses] = useState<ClassOption[]>([]);
+  const [showClassField, setShowClassField] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // 加载班级列表
+    const fetchClasses = async () => {
+      try {
+        const response = await axios.get('/api/classes');
+        if (response.data) {
+          const classOptions = response.data.map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            teacherName: cls.teacher ? cls.teacher.name : '未知教师'
+          }));
+          setClasses(classOptions);
+        }
+      } catch (error) {
+        console.error('获取班级列表失败:', error);
+      }
+    };
+
+    fetchClasses();
+  }, []);
+
+  // 监听角色变化，当选择学生时显示班级选择
+  const handleRoleChange = (value: string) => {
+    setShowClassField(value === 'STUDENT');
+  };
 
   const steps = [
     {
@@ -142,11 +177,32 @@ const Register: React.FC = () => {
             label="角色"
             rules={[{ required: true, message: '请选择角色' }]}
           >
-            <Select placeholder="请选择角色">
+            <Select 
+              placeholder="请选择角色"
+              onChange={handleRoleChange}
+            >
               <Option value="STUDENT">学生</Option>
               <Option value="TEACHER">教师</Option>
             </Select>
           </Form.Item>
+
+          {/* 班级选择字段，仅当角色为学生时显示 */}
+          {showClassField && (
+            <Form.Item
+              name="classId"
+              label="班级"
+              rules={[{ required: false, message: '请选择班级' }]}
+              extra="选择加入的班级，也可以稍后申请加入"
+            >
+              <Select placeholder="请选择班级（可选）">
+                {classes.map(cls => (
+                  <Option key={cls.id} value={cls.id.toString()}>
+                    {cls.name} - {cls.teacherName}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
 
           <Form.Item
             name="avatar"
@@ -243,12 +299,18 @@ const Register: React.FC = () => {
       formData.append('email', allValues.email);
       formData.append('role', allValues.role);
       
+      // 如果是学生并选择了班级
+      if (allValues.role === 'STUDENT' && allValues.classId) {
+        formData.append('classId', allValues.classId);
+      }
+      
       // 打印实际传递的值
       console.log('实际传递的username值:', allValues.username);
       console.log('实际传递的password值:', allValues.password ? '已设置' : '未设置');
       console.log('实际传递的name值:', allValues.name);
       console.log('实际传递的email值:', allValues.email);
       console.log('实际传递的role值:', allValues.role);
+      console.log('实际传递的classId值:', allValues.classId);
       
       if (fileList.length > 0 && fileList[0].originFileObj) {
         formData.append('avatar', fileList[0].originFileObj);
@@ -260,6 +322,7 @@ const Register: React.FC = () => {
       console.log('FormData包含name:', formData.has('name'));
       console.log('FormData包含email:', formData.has('email'));
       console.log('FormData包含role:', formData.has('role'));
+      console.log('FormData包含classId:', formData.has('classId'));
       console.log('FormData包含avatar:', formData.has('avatar'));
 
       // 检查是否缺少必要字段
@@ -306,6 +369,12 @@ const Register: React.FC = () => {
           if (errorData.field === 'email') {
             form.setFieldsValue({ email: '' });
             setCurrentStep(1);
+          }
+          
+          // 如果是班级不存在
+          if (errorData.field === 'classId') {
+            form.setFieldsValue({ classId: undefined });
+            setCurrentStep(2);
           }
         } else if (errorData.message) {
           // 一般错误消息

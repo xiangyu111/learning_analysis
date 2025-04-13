@@ -36,6 +36,11 @@ instance.interceptors.response.use(
     
     if (error.response) {
       const status = error.response.status;
+      const errorData = error.response.data;
+      
+      console.error('错误状态码:', status);
+      console.error('错误响应数据:', errorData);
+      console.error('请求配置:', error.config);
       
       // 处理不同状态码
       if (status === 401) {
@@ -46,6 +51,10 @@ instance.interceptors.response.use(
         message.error('没有权限访问');
       } else if (status === 404) {
         message.error('请求的资源不存在');
+      } else if (status === 400) {
+        // 显示后端返回的详细错误信息
+        const errorMsg = errorData?.message || '请求参数错误';
+        message.error(errorMsg);
       } else {
         // 显示后端返回的错误信息
         const errorMsg = error.response.data || '请求失败，请稍后再试';
@@ -53,9 +62,11 @@ instance.interceptors.response.use(
       }
     } else if (error.request) {
       // 请求发出但没有收到响应
+      console.error('请求已发送但无响应:', error.request);
       message.error('服务器无响应，请检查网络连接');
     } else {
       // 请求配置出错
+      console.error('请求配置错误:', error.message);
       message.error('请求配置错误');
     }
     

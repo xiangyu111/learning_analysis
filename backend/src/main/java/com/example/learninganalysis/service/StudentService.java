@@ -48,31 +48,77 @@ public class StudentService {
     }
 
     public List<Map<String, Object>> getActivities(String username) {
-        // 获取所有活动
-        List<Activity> activities = activityRepository.findAllByOrderByStartTimeDesc();
-        
-        // 获取用户信息
-        User user = userRepository.findByUsername(username).orElse(null);
-        
-        List<Map<String, Object>> result = new ArrayList<>();
-        
-        for (Activity activity : activities) {
-            Map<String, Object> activityMap = convertActivityToMap(activity);
+        try {
+            System.out.println("获取用户[" + username + "]的活动列表");
             
-            // 如果用户存在，查询用户参与情况
-            if (user != null) {
-                Optional<ActivityParticipation> participation = 
-                    participationRepository.findByUserAndActivity(user, activity);
-                
-                if (participation.isPresent()) {
-                    activityMap.put("participationStatus", participation.get().getStatus().name());
+            // 获取所有活动，即使有些活动状态在数据库中可能异常
+            List<Activity> activities = new ArrayList<>();
+            
+            try {
+                activities = activityRepository.findAllByOrderByStartTimeDesc();
+                System.out.println("找到 " + activities.size() + " 个活动");
+            } catch (Exception e) {
+                System.err.println("查询活动列表出错: " + e.getMessage());
+                // 使用原生SQL查询方法，避免枚举映射错误
+                try {
+                    activities = activityRepository.findAllActivitiesNative();
+                    System.out.println("使用原生SQL查询找到 " + activities.size() + " 个活动");
+                } catch (Exception e2) {
+                    System.err.println("原生SQL查询也失败: " + e2.getMessage());
+                    // 最后尝试使用标准方法
+                    activities = activityRepository.findAll();
+                    System.out.println("使用标准方法找到 " + activities.size() + " 个活动");
                 }
             }
             
-            result.add(activityMap);
+            // 获取用户信息
+            User user = null;
+            try {
+                user = userRepository.findByUsername(username).orElse(null);
+                if (user == null) {
+                    System.out.println("警告：未找到用户 " + username + "，将返回不含参与信息的活动列表");
+                }
+            } catch (Exception e) {
+                System.err.println("获取用户信息失败: " + e.getMessage());
+                // 继续处理，但不包含用户特定信息
+            }
+            
+            List<Map<String, Object>> result = new ArrayList<>();
+            
+            for (Activity activity : activities) {
+                try {
+                    Map<String, Object> activityMap = convertActivityToMap(activity);
+                    
+                    // 如果用户存在，查询用户参与情况
+                    if (user != null) {
+                        try {
+                            Optional<ActivityParticipation> participation = 
+                                participationRepository.findByUserAndActivity(user, activity);
+                            
+                            if (participation.isPresent()) {
+                                activityMap.put("participationStatus", participation.get().getStatus().name());
+                            }
+                        } catch (Exception e) {
+                            System.err.println("获取用户参与情况失败: " + e.getMessage());
+                            // 不中断处理，继续添加活动
+                        }
+                    }
+                    
+                    result.add(activityMap);
+                } catch (Exception e) {
+                    System.err.println("处理活动信息失败，ID: " + activity.getId() + ", 错误: " + e.getMessage());
+                    // 跳过这个有问题的活动，继续处理其他活动
+                }
+            }
+            
+            System.out.println("成功处理 " + result.size() + " 个活动");
+            return result;
+        } catch (Exception e) {
+            System.err.println("获取活动列表失败: " + e.getMessage());
+            e.printStackTrace();
+            // 发生异常时，返回空列表而不是抛出异常
+            return new ArrayList<>();
         }
-        
-        return result;
     }
     
     public List<Map<String, Object>> getMyActivities(String username) {
@@ -150,18 +196,39 @@ public class StudentService {
         Optional<ActivityParticipation> existingParticipation = 
             participationRepository.findByUserAndActivity(user, activity);
         
-        if (existingParticipation.isPresent() && 
-            existingParticipation.get().getStatus() == ParticipationStatus.REGISTERED) {
-            throw new RuntimeException("您已报名此活动");
+        ActivityParticipation participation;
+        
+        if (existingParticipation.isPresent()) {
+            // 已存在参与记录
+            participation = existingParticipation.get();
+            
+            // 如果状态是已报名，则不能重复报名
+            if (participation.getStatus() == ParticipationStatus.REGISTERED) {
+                throw new RuntimeException("您已报名此活动");
+            } 
+            // 如果状态是已取消，允许重新报名
+            else if (participation.getStatus() == ParticipationStatus.CANCELLED) {
+                System.out.println("用户[" + username + "]重新报名活动: " + id);
+                // 更新状态为已报名
+                participation.setStatus(ParticipationStatus.REGISTERED);
+                participation.setRegisterTime(LocalDateTime.now());
+                // 清除取消时间
+                participation.setCancelTime(null);
+            }
+            // 其他状态（如COMPLETED）不应允许重新报名
+            else {
+                throw new RuntimeException("当前状态无法报名");
+            }
+        } else {
+            // 不存在参与记录，创建新记录
+            participation = new ActivityParticipation();
+            participation.setUser(user);
+            participation.setActivity(activity);
+            participation.setStatus(ParticipationStatus.REGISTERED);
+            participation.setRegisterTime(LocalDateTime.now());
         }
         
-        // 创建新的参与记录
-        ActivityParticipation participation = new ActivityParticipation();
-        participation.setUser(user);
-        participation.setActivity(activity);
-        participation.setStatus(ParticipationStatus.REGISTERED);
-        participation.setRegisterTime(LocalDateTime.now());
-        
+        // 保存参与记录
         participationRepository.save(participation);
         
         // 更新活动参与人数

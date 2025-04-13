@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/es/locale/zh_CN';
 import Login from './components/auth/Login/Login';
@@ -10,6 +10,8 @@ import LearningPath from './components/student/LearningPath';
 import Feedback from './components/student/Feedback';
 import StudentActivityList from './components/student/ActivityList/StudentActivityList';
 import StudentActivityDetail from './components/student/ActivityDetail';
+import StudentProfileCenter from './components/student/ProfileCenter';
+import TeacherProfileCenter from './components/teacher/ProfileCenter';
 import {
   TeacherDashboard,
   ActivityForm,
@@ -35,6 +37,45 @@ const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode,
   return <>{children}</>;
 };
 
+// 个人中心路由组件
+const ProfileRoute = () => {
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!userData || !userData.id || !userData.role) {
+      // 如果用户信息不存在或不完整，重定向到登录页
+      navigate('/login');
+      return;
+    }
+    setUser(userData);
+  }, [navigate]);
+  
+  const refreshUserInfo = () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      // 更新localStorage中的用户信息
+      localStorage.setItem('user', JSON.stringify({...userData}));
+      // 更新组件状态
+      setUser({...userData});
+    } catch (error) {
+      console.error('刷新用户信息失败:', error);
+    }
+  };
+  
+  if (!user || !user.role) {
+    return null; // 等待重定向，不渲染任何内容
+  }
+  
+  return (
+    <>
+      {user.role === 'STUDENT' && <StudentProfileCenter user={user} refreshUserInfo={refreshUserInfo} />}
+      {user.role === 'TEACHER' && <TeacherProfileCenter user={user} refreshUserInfo={refreshUserInfo} />}
+    </>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <ConfigProvider
@@ -51,6 +92,15 @@ const App: React.FC = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
+          {/* 个人中心路由 */}
+          <Route path="/profile" element={
+            <ProtectedRoute requiredRole="">
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<ProfileRoute />} />
+          </Route>
+          
           {/* 学生路由 */}
           <Route path="/student" element={
             <ProtectedRoute requiredRole="STUDENT">
@@ -62,6 +112,16 @@ const App: React.FC = () => {
             <Route path="activities" element={<StudentActivityList />} />
             <Route path="activity/:id" element={<StudentActivityDetail />} />
             <Route path="feedback" element={<Feedback />} />
+            <Route path="profile" element={
+              <StudentProfileCenter 
+                user={JSON.parse(localStorage.getItem('user') || '{}')} 
+                refreshUserInfo={() => {
+                  // 获取最新用户信息并更新
+                  const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  localStorage.setItem('user', JSON.stringify({...user}));
+                }} 
+              />
+            } />
             <Route index element={<Navigate to="/student/dashboard" replace />} />
           </Route>
 
@@ -83,6 +143,16 @@ const App: React.FC = () => {
             <Route path="targets" element={<LearningGoalManagement />} />
             <Route path="student/:id" element={<StudentEvaluation />} />
             <Route path="student" element={<StudentEvaluation />} />
+            <Route path="profile" element={
+              <TeacherProfileCenter 
+                user={JSON.parse(localStorage.getItem('user') || '{}')} 
+                refreshUserInfo={() => {
+                  // 获取最新用户信息并更新
+                  const user = JSON.parse(localStorage.getItem('user') || '{}');
+                  localStorage.setItem('user', JSON.stringify({...user}));
+                }} 
+              />
+            } />
             <Route index element={<Navigate to="/teacher/dashboard" replace />} />
           </Route>
 
