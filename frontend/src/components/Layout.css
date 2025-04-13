@@ -1,0 +1,210 @@
+.layout {
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1890ff;
+  background: linear-gradient(45deg, #1890ff, #722ed1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-dropdown {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.user-dropdown:hover {
+  background: rgba(0, 0, 0, 0.025);
+}
+
+.user-avatar {
+  margin-right: 8px;
+  background: #1890ff;
+}
+
+.user-name {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.sider {
+  background: #fff;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
+  position: fixed;
+  left: 0;
+  top: 64px;
+  bottom: 0;
+  z-index: 999;
+}
+
+.menu {
+  height: 100%;
+  border-right: none;
+  padding-top: 16px;
+}
+
+.menu .ant-menu-item {
+  margin: 4px 0;
+  padding: 0 24px !important;
+  height: 40px;
+  line-height: 40px;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.menu .ant-menu-item:hover {
+  background: rgba(24, 144, 255, 0.1);
+}
+
+.menu .ant-menu-item-selected {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.content-layout {
+  margin-left: 200px;
+  margin-top: 64px;
+  padding: 24px;
+  background: #f0f2f5;
+  min-height: calc(100vh - 64px);
+}
+
+.content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  min-height: calc(100vh - 112px);
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.collapse-btn {
+  font-size: 16px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.collapse-btn:hover {
+  background: rgba(0, 0, 0, 0.025);
+  border-radius: 4px;
+}
+
+.sider {
+  transition: all 0.3s;
+}
+
+.content-layout {
+  transition: all 0.3s;
+}
+
+.content-layout.collapsed {
+  margin-left: 0;
+}
+
+/* 添加平滑过渡效果 */
+.ant-layout-sider {
+  transition: all 0.3s !important;
+}
+
+/* 优化移动端体验 */
+@media (max-width: 768px) {
+  .sider {
+    display: none;
+  }
+  
+  .content-layout {
+    margin-left: 0;
+  }
+  
+  .header {
+    padding: 0 12px;
+  }
+  
+  .header-left {
+    gap: 8px;
+  }
+  
+  .logo {
+    font-size: 14px;
+  }
+  
+  .user-name {
+    display: none;
+  }
+  
+  .user-avatar {
+    margin-right: 0;
+  }
+  
+  .content {
+    padding: 16px;
+  }
+}
+
+/* 添加暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .header {
+    background: #141414;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .sider {
+    background: #141414;
+  }
+  
+  .content {
+    background: #1f1f1f;
+  }
+  
+  .user-name {
+    color: rgba(255, 255, 255, 0.85);
+  }
+  
+  .collapse-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+} 

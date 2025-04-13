@@ -1,0 +1,53 @@
+.dashboard {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-card {
+    height: 100%;
+    min-height: 400px;
+}
+
+.dashboard-card .ant-card-body {
+    height: calc(100% - 57px);
+    overflow-y: auto;
+}
+
+.ant-list-item {
+    padding: 16px !important;
+}
+
+.ant-list-item:hover {
+    background-color: #fafafa;
+    transition: background-color 0.3s;
+}
+
+.ant-statistic-title {
+    font-size: 14px;
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.ant-statistic-content {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.ant-tag {
+    margin-right: 0;
+}
+
+.ant-progress {
+    margin-bottom: 0;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+    .dashboard {
+        padding: 16px;
+    }
+
+    .dashboard-card {
+        min-height: 300px;
+    }
+} 

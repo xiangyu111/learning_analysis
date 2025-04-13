@@ -1,0 +1,120 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1890ff 0%, #722ed1 100%);
+  padding: 24px;
+}
+
+.login-container {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  animation: fadeIn 0.5s ease;
+}
+
+.login-box {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  padding: 30px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.login-tabs .ant-tabs-nav {
+  margin-bottom: 24px;
+}
+
+.login-form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.login-form-forgot {
+  float: right;
+}
+
+.login-form-footer {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.captcha-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.captcha-row .ant-form-item {
+  flex: 1;
+}
+
+.captcha-button {
+  min-width: 120px;
+}
+
+.login-slogan {
+  text-align: center;
+  margin-top: 32px;
+  color: #1890ff;
+  padding-top: 20px;
+  border-top: 1px dashed rgba(24, 144, 255, 0.3);
+}
+
+.login-slogan h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  background: linear-gradient(45deg, #1890ff, #722ed1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-slogan p {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px;
+  }
+  
+  .login-box {
+    padding: 20px;
+  }
+} 
