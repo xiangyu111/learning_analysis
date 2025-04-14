@@ -48,4 +48,49 @@ CREATE TABLE IF NOT EXISTS activity_participations (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (activity_id) REFERENCES activities(id),
     UNIQUE (user_id, activity_id)
+);
+
+-- 班级表
+CREATE TABLE IF NOT EXISTS classes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    teacher_id BIGINT NOT NULL,
+    created_at DATETIME,
+    updated_at DATETIME,
+    FOREIGN KEY (teacher_id) REFERENCES users(id)
+);
+
+-- 班级学生关联表
+CREATE TABLE IF NOT EXISTS class_students (
+    class_id BIGINT NOT NULL,
+    student_id BIGINT NOT NULL,
+    PRIMARY KEY (class_id, student_id),
+    FOREIGN KEY (class_id) REFERENCES classes(id),
+    FOREIGN KEY (student_id) REFERENCES users(id)
+);
+
+-- 班级申请表
+CREATE TABLE IF NOT EXISTS class_applications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    student_id BIGINT NOT NULL,
+    class_id BIGINT NOT NULL,
+    message TEXT,
+    status VARCHAR(20) NOT NULL,
+    created_at DATETIME NOT NULL,
+    handled_at DATETIME,
+    FOREIGN KEY (student_id) REFERENCES users(id),
+    FOREIGN KEY (class_id) REFERENCES classes(id)
+);
+
+-- 系统日志表
+CREATE TABLE IF NOT EXISTS system_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    operation_type VARCHAR(50) NOT NULL,
+    operation_detail TEXT,
+    user_id BIGINT,
+    user_role VARCHAR(20),
+    ip_address VARCHAR(100),
+    created_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 ); 

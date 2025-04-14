@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +48,14 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
+            if (parts.length < 3) {  // 修改为至少有3部分
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
             String username = parts[0];
             String role = parts[1];
+            // UUID 在 parts[2]，不需要使用
             
             if (!role.equals("TEACHER")) {
                 return ResponseEntity.badRequest().body("只有教师可以创建班级");
@@ -76,8 +83,14 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
+            if (parts.length < 3) {  // 修改为至少有3部分
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
             String username = parts[0];
             String role = parts[1];
+            // UUID 在 parts[2]，不需要使用
             
             if (!role.equals("TEACHER")) {
                 return ResponseEntity.badRequest().body("只有教师可以访问此接口");
@@ -105,8 +118,14 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
+            if (parts.length < 3) {  // 修改为至少有3部分
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
             String username = parts[0];
             String role = parts[1];
+            // UUID 在 parts[2]，不需要使用
             
             if (!role.equals("STUDENT")) {
                 return ResponseEntity.badRequest().body("只有学生可以访问此接口");
@@ -135,7 +154,7 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
-            if (parts.length < 2) {
+            if (parts.length < 3) {
                 logger.severe("无效的token格式: " + token);
                 return ResponseEntity.badRequest().body("无效的认证信息");
             }
@@ -176,7 +195,7 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
-            if (parts.length < 2) {
+            if (parts.length < 3) {
                 logger.severe("无效的token格式: " + token);
                 return ResponseEntity.badRequest().body("无效的认证信息");
             }
@@ -207,24 +226,24 @@ public class ClassController {
      * 获取学生的申请历史
      */
     @GetMapping("/applications/student")
-    public ResponseEntity<?> getStudentApplications(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> getStudentApplications(
+            @RequestHeader("Authorization") String token) {
         try {
-            logger.info("获取学生申请历史请求，token: " + token);
+            logger.info("获取学生申请记录请求，token: " + token);
             // 检查并移除Bearer前缀
             if (token.startsWith("Bearer ")) {
                 token = token.substring(7);
             }
             
             String[] parts = token.split("\\.");
-            if (parts.length < 2) {
+            if (parts.length < 3) {
                 logger.severe("无效的token格式: " + token);
                 return ResponseEntity.badRequest().body("无效的认证信息");
             }
             
             String username = parts[0];
             String role = parts[1];
-            
-            logger.info("解析的用户名: " + username + ", 角色: " + role);
+            // UUID 在 parts[2]，不需要使用
             
             if (!role.equals("STUDENT")) {
                 return ResponseEntity.badRequest().body("只有学生可以访问此接口");
@@ -233,9 +252,28 @@ public class ClassController {
             User student = userService.findByUsername(username);
             List<ClassApplication> applications = classService.getStudentApplications(student.getId());
             
-            return ResponseEntity.ok(applications);
+            // 转换为包含班级名称的响应
+            List<Map<String, Object>> response = applications.stream().map(app -> {
+                Map<String, Object> appData = new HashMap<>();
+                appData.put("id", app.getId());
+                appData.put("status", app.getStatus());
+                appData.put("message", app.getMessage());
+                appData.put("createdAt", app.getCreatedAt());
+                appData.put("handledAt", app.getHandledAt());
+                appData.put("rejectReason", app.getRejectReason());
+                
+                Map<String, Object> classData = new HashMap<>();
+                classData.put("id", app.getClassEntity().getId());
+                classData.put("name", app.getClassEntity().getName());
+                
+                appData.put("class", classData);
+                
+                return appData;
+            }).collect(Collectors.toList());
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.severe("获取学生申请历史失败: " + e.getMessage());
+            logger.severe("获取学生申请记录失败: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -253,8 +291,14 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
+            if (parts.length < 3) {  // 修改为至少有3部分
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
             String username = parts[0];
             String role = parts[1];
+            // UUID 在 parts[2]，不需要使用
             
             if (!role.equals("TEACHER")) {
                 return ResponseEntity.badRequest().body("只有教师可以访问此接口");
@@ -308,8 +352,14 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
+            if (parts.length < 3) {  // 修改为至少有3部分
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
             String username = parts[0];
             String role = parts[1];
+            // UUID 在 parts[2]，不需要使用
             
             if (!role.equals("TEACHER")) {
                 return ResponseEntity.badRequest().body("只有教师可以处理申请");
@@ -324,18 +374,17 @@ public class ClassController {
                 rejectReason = (String) body.getOrDefault("rejectReason", "");
             }
             
-            ClassApplication application = classService.processApplication(
-                    applicationId, newStatus, rejectReason, teacher.getId());
+            ClassApplication application = classService.processApplication(applicationId, newStatus, rejectReason, teacher.getId());
             
             return ResponseEntity.ok(application);
         } catch (Exception e) {
-            logger.severe("处理班级申请失败: " + e.getMessage());
+            logger.severe("处理申请失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
     
     /**
-     * 学生取消班级申请
+     * 学生取消加入班级申请
      */
     @DeleteMapping("/applications/{applicationId}")
     public ResponseEntity<?> cancelApplication(
@@ -348,8 +397,14 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
+            if (parts.length < 3) {  // 修改为至少有3部分
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
             String username = parts[0];
             String role = parts[1];
+            // UUID 在 parts[2]，不需要使用
             
             if (!role.equals("STUDENT")) {
                 return ResponseEntity.badRequest().body("只有学生可以取消申请");
@@ -358,11 +413,9 @@ public class ClassController {
             User student = userService.findByUsername(username);
             classService.cancelApplication(applicationId, student.getId());
             
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "申请已取消");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok("申请已取消");
         } catch (Exception e) {
-            logger.severe("取消班级申请失败: " + e.getMessage());
+            logger.severe("取消申请失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -396,6 +449,11 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
+            if (parts.length < 3) {  // 添加这部分检查
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
             String username = parts[0];
             String role = parts[1];
             
@@ -428,8 +486,14 @@ public class ClassController {
             }
             
             String[] parts = token.split("\\.");
+            if (parts.length < 3) {  // 添加这部分检查
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
             String username = parts[0];
             String role = parts[1];
+            // UUID 在 parts[2]，不需要使用
             
             if (!role.equals("TEACHER")) {
                 return ResponseEntity.badRequest().body("只有教师可以移除学生");
@@ -443,6 +507,100 @@ public class ClassController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.severe("移除班级学生失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
+    /**
+     * 批量处理班级申请
+     */
+    @PostMapping("/applications/process")
+    public ResponseEntity<?> processBatchApplications(
+            @RequestBody Map<String, Object> body,
+            @RequestHeader("Authorization") String token) {
+        try {
+            // 检查并移除Bearer前缀
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            
+            String[] parts = token.split("\\.");
+            if (parts.length < 3) {
+                logger.severe("无效的token格式: " + token);
+                return ResponseEntity.badRequest().body("无效的认证信息");
+            }
+            
+            String username = parts[0];
+            String role = parts[1];
+            // UUID 在 parts[2]，不需要使用
+            
+            if (!role.equals("TEACHER")) {
+                return ResponseEntity.badRequest().body("只有教师可以处理申请");
+            }
+            
+            User teacher = userService.findByUsername(username);
+            
+            // 获取申请ID列表并确保转换为Long类型
+            List<Integer> rawIds = (List<Integer>) body.get("applicationIds");
+            List<Long> applicationIds = new ArrayList<>();
+            
+            if (rawIds != null) {
+                for (Integer id : rawIds) {
+                    applicationIds.add(id.longValue()); // 明确转换为Long类型
+                }
+                logger.info("处理申请IDs: " + applicationIds);
+            } else {
+                return ResponseEntity.badRequest().body("申请ID列表不能为空");
+            }
+            
+            String action = (String) body.get("action");
+            
+            if (applicationIds.isEmpty()) {
+                return ResponseEntity.badRequest().body("申请ID列表不能为空");
+            }
+            
+            if (action == null || (!action.equals("approve") && !action.equals("reject"))) {
+                return ResponseEntity.badRequest().body("操作类型无效，必须是 'approve' 或 'reject'");
+            }
+            
+            ApplicationStatus newStatus = action.equals("approve") ? 
+                ApplicationStatus.APPROVED : ApplicationStatus.REJECTED;
+            
+            String rejectReason = "";
+            if (newStatus == ApplicationStatus.REJECTED) {
+                rejectReason = (String) body.getOrDefault("rejectReason", "");
+            }
+            
+            // 处理每个申请
+            List<Map<String, Object>> results = new ArrayList<>();
+            for (Long applicationId : applicationIds) {
+                try {
+                    ClassApplication application = classService.processApplication(
+                        applicationId, newStatus, rejectReason, teacher.getId());
+                    
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("id", application.getId());
+                    result.put("status", application.getStatus().toString());
+                    result.put("success", true);
+                    results.add(result);
+                } catch (Exception e) {
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("id", applicationId);
+                    result.put("error", e.getMessage());
+                    result.put("success", false);
+                    results.add(result);
+                    logger.severe("处理申请ID " + applicationId + " 失败: " + e.getMessage());
+                }
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("results", results);
+            response.put("totalProcessed", results.size());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.severe("批量处理申请失败: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

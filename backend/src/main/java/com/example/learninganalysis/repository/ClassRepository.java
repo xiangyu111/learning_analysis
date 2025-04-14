@@ -20,4 +20,10 @@ public interface ClassRepository extends JpaRepository<ClassEntity, Long> {
     Optional<ClassEntity> findByNameAndTeacherId(String name, Long teacherId);
 
     List<ClassEntity> findByNameContaining(String name);
+    
+    @Query("SELECT DISTINCT c.teacher FROM ClassEntity c")
+    List<User> findDistinctTeachers();
+    
+    @Query("SELECT COUNT(c) FROM ClassEntity c JOIN c.students s WHERE s.id = :studentId")
+    long countClassesJoinedByStudent(Long studentId);
 }

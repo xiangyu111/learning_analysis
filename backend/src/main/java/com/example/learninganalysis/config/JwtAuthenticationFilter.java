@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 try {
                     // 解析token
                     String[] parts = token.split("\\.");
-                    if (parts.length >= 2) {
+                    if (parts.length >= 3) {
                         String username = parts[0];
                         String role = parts[1];
                         

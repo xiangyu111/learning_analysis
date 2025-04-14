@@ -12,7 +12,8 @@ import {
   DashboardOutlined,
   TeamOutlined,
   AimOutlined,
-  ReadOutlined
+  ReadOutlined,
+  SettingOutlined
 } from '@ant-design/icons';
 import axios from '../utils/axios';
 import './Layout.css';
@@ -50,6 +51,8 @@ const Layout: React.FC = () => {
       return '/teacher';
     } else if (role === 'STUDENT') {
       return '/student';
+    } else if (role === 'ADMIN') {
+      return '/admin';
     } else {
       return '';
     }
@@ -124,6 +127,39 @@ const Layout: React.FC = () => {
           key: '/student/feedback',
           icon: <FileTextOutlined />,
           label: '反馈提交'
+        }
+      ];
+    } else if (role === 'ADMIN') {
+      return [
+        {
+          key: '/admin/dashboard',
+          icon: <DashboardOutlined />,
+          label: '系统概览'
+        },
+        {
+          key: '/admin/classes',
+          icon: <TeamOutlined />,
+          label: '班级管理'
+        },
+        {
+          key: '/admin/teachers',
+          icon: <UserOutlined />,
+          label: '教师管理'
+        },
+        {
+          key: '/admin/students',
+          icon: <UserOutlined />,
+          label: '学生管理'
+        },
+        {
+          key: '/admin/logs',
+          icon: <FileTextOutlined />,
+          label: '系统日志'
+        },
+        {
+          key: '/admin/settings',
+          icon: <SettingOutlined />,
+          label: '系统设置'
         }
       ];
     } else {

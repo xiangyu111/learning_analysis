@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Table, Card, Input, Button, Space, Tabs, Modal, message, Form,
-  Typography, Tag, Dropdown, Avatar, Menu, Checkbox, Row, Col, Divider 
+  Typography, Tag, Dropdown, Avatar, Menu, Checkbox, Row, Col, Divider, Tooltip, Alert 
 } from 'antd';
 import { 
   SearchOutlined, UserOutlined, PlusOutlined, 
   DownloadOutlined, MoreOutlined, DeleteOutlined,
-  TeamOutlined, EditOutlined, EyeOutlined
+  TeamOutlined, EditOutlined, EyeOutlined, CopyOutlined,
+  CheckOutlined, CloseOutlined
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useNavigate } from 'react-router-dom';
@@ -26,20 +27,35 @@ interface Student {
   status: string;
 }
 
+interface StudentApplication {
+  id: number;
+  studentId: number;
+  studentName: string;
+  studentUsername: string;
+  classId: number;
+  className: string;
+  applyDate: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  message?: string;
+}
+
 interface Class {
   id: number;
   name: string;
   studentCount: number;
   createdAt: string;
   description: string;
+  classCode?: string;
 }
 
 const ClassManager: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  const [applications, setApplications] = useState<StudentApplication[]>([]);
   const [searchText, setSearchText] = useState('');
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [selectedApplicationKeys, setSelectedApplicationKeys] = useState<React.Key[]>([]);
   const [activeTab, setActiveTab] = useState('1');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
@@ -52,10 +68,12 @@ const ClassManager: React.FC = () => {
     fetchClasses();
   }, []);
 
-  // 获取学生列表
+  // 获取学生列表和申请列表
   useEffect(() => {
     if (activeTab === '2') {
       fetchStudents();
+    } else if (activeTab === '3') {
+      fetchApplications();
     }
   }, [activeTab]);
 
@@ -84,6 +102,34 @@ const ClassManager: React.FC = () => {
       setLoading(false);
     }
   };
+  
+  const fetchApplications = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('/api/classes/applications/teacher');
+      console.log('获取到的申请数据:', response.data);
+      
+      // 处理API返回的数据，确保有正确的字段名称
+      const formattedApplications = response.data.map((app: any) => ({
+        id: app.id,
+        studentId: app.student?.id,
+        studentName: app.student?.name,
+        studentUsername: app.student?.username,
+        classId: app.class?.id,
+        className: app.class?.name,
+        applyDate: app.createdAt,
+        message: app.message,
+        status: app.status
+      }));
+      
+      setApplications(formattedApplications || []);
+    } catch (error) {
+      console.error('获取申请列表失败:', error);
+      message.error('获取申请列表失败');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = (value: string) => {
     setSearchText(value);
@@ -97,17 +143,11 @@ const ClassManager: React.FC = () => {
   const handleTabChange = (key: string) => {
     setActiveTab(key);
     setSelectedRowKeys([]);
+    setSelectedApplicationKeys([]);
   };
 
   const handleStudentDetail = (studentId: number) => {
     navigate(`/teacher/student/${studentId}`);
-  };
-
-  const handleCreateClass = () => {
-    setCurrentClass(null);
-    setModalTitle('创建新班级');
-    form.resetFields();
-    setIsModalVisible(true);
   };
 
   const handleEditClass = (record: Class) => {
@@ -154,10 +194,6 @@ const ClassManager: React.FC = () => {
         // 更新班级
         await axios.put(`/api/teacher/class/${currentClass.id}`, values);
         message.success('班级已更新');
-      } else {
-        // 创建班级
-        await axios.post('/api/teacher/class/create', values);
-        message.success('班级已创建');
       }
       
       // 刷新班级列表
@@ -208,6 +244,38 @@ const ClassManager: React.FC = () => {
     });
   };
 
+  const handleApplicationAction = async (ids: number[], action: 'approve' | 'reject') => {
+    if (ids.length === 0) {
+      message.warning('请先选择申请');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 确保ids是Long类型，而不是Integer
+      const longIds = ids.map(id => Number(id));
+      
+      await axios.post('/api/classes/applications/process', {
+        applicationIds: longIds,
+        action: action
+      });
+      
+      if (action === 'approve') {
+        message.success(`已批准 ${ids.length} 个申请`);
+      } else {
+        message.success(`已拒绝 ${ids.length} 个申请`);
+      }
+      
+      fetchApplications();
+      setSelectedApplicationKeys([]);
+    } catch (error) {
+      console.error('操作失败:', error);
+      message.error('操作失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const classColumns = [
     {
       title: '班级名称',
@@ -226,6 +294,26 @@ const ClassManager: React.FC = () => {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
+    },
+    {
+      title: '班级码',
+      dataIndex: 'classCode',
+      key: 'classCode',
+      render: (text: string) => (
+        text ? (
+          <Tooltip title="点击复制">
+            <Tag color="blue" style={{ cursor: 'pointer' }} onClick={() => {
+              navigator.clipboard.writeText(text);
+              message.success('班级码已复制到剪贴板');
+            }}>
+              <Space>
+                {text}
+                <CopyOutlined />
+              </Space>
+            </Tag>
+          </Tooltip>
+        ) : <Tag color="red">无班级码</Tag>
+      )
     },
     {
       title: '班级描述',
@@ -332,6 +420,136 @@ const ClassManager: React.FC = () => {
     onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
   };
 
+  const applicationColumns = [
+    {
+      title: '学生姓名',
+      dataIndex: 'studentName',
+      key: 'studentName',
+      render: (text: string, record: StudentApplication) => (
+        <a onClick={() => navigate(`/teacher/student/${record.studentId}`)}>{text}</a>
+      )
+    },
+    {
+      title: '学号',
+      dataIndex: 'studentUsername',
+      key: 'studentUsername',
+    },
+    {
+      title: '申请班级',
+      dataIndex: 'className',
+      key: 'className',
+    },
+    {
+      title: '申请消息',
+      dataIndex: 'message',
+      key: 'message',
+      ellipsis: true,
+      render: (text: string) => (
+        <Tooltip title={text || '无申请消息'}>
+          <span>{text || '-'}</span>
+        </Tooltip>
+      )
+    },
+    {
+      title: '申请时间',
+      dataIndex: 'applyDate',
+      key: 'applyDate',
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        if (status === 'PENDING') return <Tag color="gold">待审核</Tag>;
+        if (status === 'APPROVED') return <Tag color="green">已通过</Tag>;
+        if (status === 'REJECTED') return <Tag color="red">已拒绝</Tag>;
+        return <Tag>未知</Tag>;
+      }
+    },
+    {
+      title: '操作',
+      key: 'action',
+      render: (_: any, record: StudentApplication) => (
+        record.status === 'PENDING' ? (
+          <Space size="small">
+            <Button type="link" icon={<CheckOutlined />} onClick={() => handleApplicationAction([record.id], 'approve')}>
+              通过
+            </Button>
+            <Button type="link" danger icon={<CloseOutlined />} onClick={() => handleApplicationAction([record.id], 'reject')}>
+              拒绝
+            </Button>
+          </Space>
+        ) : <Text type="secondary">已处理</Text>
+      )
+    }
+  ];
+
+  // 渲染操作栏
+  const renderActions = () => {
+    return (
+      <Space size="middle">
+        <Input.Search
+          placeholder="搜索班级或学生"
+          allowClear
+          style={{ width: 250 }}
+          onSearch={handleSearch}
+        />
+        {activeTab === '2' && selectedRowKeys.length > 0 && (
+          <Dropdown menu={{ 
+            items: [
+              {
+                key: 'assignTarget',
+                label: '分配学习目标',
+                onClick: () => handleBatchAction('assignTarget')
+              },
+              {
+                key: 'removeFromClass',
+                label: '从班级移除',
+                danger: true,
+                onClick: () => handleBatchAction('removeFromClass')
+              }
+            ]
+          }} trigger={['click']}>
+            <Button>
+              批量操作 <DownloadOutlined />
+            </Button>
+          </Dropdown>
+        )}
+      </Space>
+    );
+  };
+
+  const renderApplicationActions = () => {
+    return (
+      <Space size="middle">
+        <Input.Search
+          placeholder="搜索学生或班级"
+          allowClear
+          style={{ width: 250 }}
+          onSearch={handleSearch}
+        />
+        {selectedApplicationKeys.length > 0 && (
+          <>
+            <Button 
+              type="primary" 
+              icon={<CheckOutlined />}
+              onClick={() => handleApplicationAction(selectedApplicationKeys as number[], 'approve')}
+            >
+              批量通过
+            </Button>
+            <Button 
+              danger 
+              icon={<CloseOutlined />}
+              onClick={() => handleApplicationAction(selectedApplicationKeys as number[], 'reject')}
+            >
+              批量拒绝
+            </Button>
+          </>
+        )}
+      </Space>
+    );
+  };
+
   return (
     <div className="class-manager">
       <Title level={2}>班级管理</Title>
@@ -339,17 +557,7 @@ const ClassManager: React.FC = () => {
         <TabPane tab={<span><TeamOutlined />班级列表</span>} key="1">
           <Card>
             <div className="table-header" style={{ marginBottom: 16 }}>
-              <Space>
-                <Search 
-                  placeholder="搜索班级名称" 
-                  allowClear 
-                  onSearch={handleSearch} 
-                  style={{ width: 250, marginRight: 16 }}
-                />
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateClass}>
-                  创建班级
-                </Button>
-              </Space>
+              {renderActions()}
             </div>
             <Table 
               columns={classColumns} 
@@ -363,28 +571,7 @@ const ClassManager: React.FC = () => {
         <TabPane tab={<span><UserOutlined />学生管理</span>} key="2">
           <Card>
             <div className="table-header" style={{ marginBottom: 16 }}>
-              <Space>
-                <Search 
-                  placeholder="搜索学生姓名或学号" 
-                  allowClear 
-                  onSearch={handleSearch} 
-                  style={{ width: 250, marginRight: 16 }}
-                />
-                <Button 
-                  type="primary" 
-                  disabled={selectedRowKeys.length === 0}
-                  onClick={() => handleBatchAction('assignTarget')}
-                >
-                  分配新目标
-                </Button>
-                <Button 
-                  danger 
-                  disabled={selectedRowKeys.length === 0}
-                  onClick={() => handleBatchAction('removeFromClass')}
-                >
-                  移除班级
-                </Button>
-              </Space>
+              {renderActions()}
             </div>
             <Table 
               rowSelection={rowSelection}
@@ -392,6 +579,31 @@ const ClassManager: React.FC = () => {
               dataSource={filteredStudents} 
               rowKey="id" 
               loading={loading}
+              pagination={{ pageSize: 10 }}
+            />
+          </Card>
+        </TabPane>
+        <TabPane tab="加入申请" key="3">
+          <Card>
+            <div className="table-header" style={{ marginBottom: 16 }}>
+              {renderApplicationActions()}
+            </div>
+            <Table 
+              columns={applicationColumns}
+              dataSource={applications.filter(app => 
+                (app.studentName?.toLowerCase() || '').includes(searchText.toLowerCase()) ||
+                (app.className?.toLowerCase() || '').includes(searchText.toLowerCase())
+              )}
+              loading={loading}
+              rowKey="id"
+              rowSelection={{
+                type: 'checkbox',
+                selectedRowKeys: selectedApplicationKeys,
+                onChange: (keys) => setSelectedApplicationKeys(keys),
+                getCheckboxProps: (record) => ({
+                  disabled: record.status !== 'PENDING',
+                }),
+              }}
               pagination={{ pageSize: 10 }}
             />
           </Card>

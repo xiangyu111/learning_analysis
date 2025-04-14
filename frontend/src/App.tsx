@@ -21,6 +21,11 @@ import {
   StudentEvaluation,
   LearningGoalManagement
 } from './components/teacher';
+import { default as AdminClassManager } from './components/admin/ClassManager';
+import SystemLogs from './components/admin/SystemLogs';
+import AdminDashboard from './components/admin/AdminDashboard';
+import TeacherManager from './components/admin/TeacherManager';
+import StudentManager from './components/admin/StudentManager';
 
 // 路由保护组件
 const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode, requiredRole: string }) => {
@@ -167,6 +172,22 @@ const App: React.FC = () => {
             <Route path="activities" element={<StudentActivityList />} />
             <Route path="activity/:id" element={<StudentActivityDetail />} />
             <Route path="feedback" element={<Feedback />} />
+          </Route>
+          
+          {/* 管理员路由 */}
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Navigate to="/admin/dashboard" />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="classes" element={<AdminClassManager />} />
+            <Route path="teachers" element={<TeacherManager />} />
+            <Route path="students" element={<StudentManager />} />
+            <Route path="logs" element={<SystemLogs />} />
+            <Route path="profile" element={<div>个人信息</div>} />
+            <Route path="settings" element={<div>系统设置</div>} />
           </Route>
           
           <Route path="/" element={<Navigate to="/login" replace />} />
